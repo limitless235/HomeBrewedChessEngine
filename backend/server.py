@@ -363,13 +363,19 @@ class MoveRequest(BaseModel):
 class FenRequest(BaseModel):
     fen: str
 
-# Mount static directories from the cloned repo
-app.mount("/dist", StaticFiles(directory=os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "dist")), name="dist")
-app.mount("/assets", StaticFiles(directory=os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "assets")), name="assets")
+dist_dir = os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "dist")
+assets_dir = os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "assets")
+if os.path.exists(dist_dir):
+    app.mount("/dist", StaticFiles(directory=dist_dir), name="dist")
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 @app.get("/")
 def serve_index():
-    return FileResponse(os.path.join(PROJECT_ROOT, "frontend", "index.html"))
+    index_path = os.path.join(PROJECT_ROOT, "frontend", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "Backend API is running. UI is hosted on Vercel."}
 
 class NewGameRequest(BaseModel):
     player_color: str = "white"
