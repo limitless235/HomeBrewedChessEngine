@@ -1026,7 +1026,7 @@
                 btn.classList.remove('analyzing');
                 btn.innerHTML = `💡 Explain`;
                 btn.disabled = false;
-                document.getElementById('feedback-content').innerHTML = `<i>Analysis failed to load.</i>`;
+                document.getElementById('feedback-content').innerHTML = `<i>Analysis failed to load. (${e.message})</i>`;
                 console.error(e);
             }
         };
