@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -O3 -march=native -Wall -Wextra
 DEBUGFLAGS = -std=c++17 -g -O0 -fsanitize=address -Wall -Wextra
 TARGET = engine
-SRCS = main.cpp board.cpp movegen.cpp attacks.cpp search.cpp evaluate.cpp tt.cpp uci.cpp
+SRCS = src/main.cpp src/board.cpp src/movegen.cpp src/attacks.cpp src/search.cpp src/evaluate.cpp src/tt.cpp src/uci.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 .PHONY: all clean debug

@@ -46,10 +46,12 @@ To pull the necessary Master Opening tables, execute the download script:
 ```
 
 ### 3. Build the C++ Engine
-Navigate into the directory and hit:
+Navigate into the engine directory and hit:
 ```bash
+cd engine
 make clean
 make
+cd ..
 ```
 
 ### 4. Setup Python Environment
@@ -67,7 +69,7 @@ pip install -r requirements.txt
 ### 6. Run the Application
 Finally, fire up the FastAPI backend! It orchestrates the engine, the HTML interface, and the AI coach synchronously:
 ```bash
-uvicorn server:app --reload --port 8000
+uvicorn backend.server:app --reload --port 8000
 ```
 Open your browser to `http://localhost:8000` to start playing!
 
@@ -75,9 +77,9 @@ Open your browser to `http://localhost:8000` to start playing!
 
 ## Architecture
 
-1. **`index.html`** → Connects to User. Holds Chessground UI, Move PGN Tracker, & Pattern History caching. Calls endpoints like `/move` and `/analyze_move`.
-2. **`server.py`** → Central Intelligence Pipeline. Hosts FastAPI. Subprocesses and queries `./engine` binary. Communicates with Local LM Studio backend via HTTPX. Pre-calculates facts using `python-chess`. 
-3. **`engine` (C++)** → Pure mathematical calculation engine running securely behind standard I/O pipes. Speaks strictly UCI coordinates. 
+1. **`frontend/index.html`** → Connects to User. Holds Chessground UI, Move PGN Tracker, & Pattern History caching. Calls endpoints like `/move` and `/analyze_move`.
+2. **`backend/server.py`** → Central Intelligence Pipeline. Hosts FastAPI. Subprocesses and queries `./engine/engine` binary. Communicates with Local LM Studio backend via HTTPX. Pre-calculates facts using `python-chess`. 
+3. **`engine/src/` (C++)** → Pure mathematical calculation engine running securely behind standard I/O pipes. Speaks strictly UCI coordinates. 
 
 ---
 

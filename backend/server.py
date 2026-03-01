@@ -12,6 +12,9 @@ import os
 import urllib.parse
 import csv
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
 LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_URL", "http://localhost:1234/v1")
 LM_STUDIO_MODEL = "local-model"  # LM Studio ignores this, uses loaded model
 LM_STUDIO_TIMEOUT = 45.0
@@ -89,7 +92,7 @@ ECO_POSITION_MAP = {}
 ECO_MOVE_MAP = {}
 
 def load_opening_book():
-    openings_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "openings")
+    openings_dir = os.path.join(PROJECT_ROOT, "openings")
     import io
     import chess.pgn
     for filename in ["a.tsv", "b.tsv", "c.tsv", "d.tsv", "e.tsv"]:
@@ -277,7 +280,7 @@ class EngineManager:
         
     def start(self):
         self.process = subprocess.Popen(
-            ['./engine'],
+            [os.path.join(PROJECT_ROOT, "engine", "engine")],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, # Ignore stderr to prevent buffer blockages
@@ -361,12 +364,12 @@ class FenRequest(BaseModel):
     fen: str
 
 # Mount static directories from the cloned repo
-app.mount("/dist", StaticFiles(directory="chessground/dist"), name="dist")
-app.mount("/assets", StaticFiles(directory="chessground/assets"), name="assets")
+app.mount("/dist", StaticFiles(directory=os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "dist")), name="dist")
+app.mount("/assets", StaticFiles(directory=os.path.join(PROJECT_ROOT, "frontend", "static", "chessground", "assets")), name="assets")
 
 @app.get("/")
 def serve_index():
-    return FileResponse("index.html")
+    return FileResponse(os.path.join(PROJECT_ROOT, "frontend", "index.html"))
 
 class NewGameRequest(BaseModel):
     player_color: str = "white"
