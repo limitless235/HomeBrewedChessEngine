@@ -5,7 +5,7 @@ __pycache__/
 venv/
 env/
 .env
-
+render.yaml
 # MacOS
 .DS_Store
 
