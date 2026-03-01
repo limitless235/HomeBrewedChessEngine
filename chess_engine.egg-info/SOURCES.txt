@@ -1,0 +1,15 @@
+setup.py
+chess_engine/__init__.py
+chess_engine/board.py
+chess_engine/eval.py
+chess_engine/move.py
+chess_engine/movegen.py
+chess_engine/search.py
+chess_engine/uci.py
+chess_engine.egg-info/PKG-INFO
+chess_engine.egg-info/SOURCES.txt
+chess_engine.egg-info/dependency_links.txt
+chess_engine.egg-info/requires.txt
+chess_engine.egg-info/top_level.txt
+tests/test_board.py
+tests/test_perft.py

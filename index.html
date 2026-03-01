@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeBrewed Chess Engine</title>
+    <!-- Use local css styles exported from the cloned repo -->
+    <link rel="stylesheet" href="/assets/chessground.base.css">
+    <link rel="stylesheet" href="/assets/chessground.brown.css">
+    <link rel="stylesheet" href="/assets/chessground.cburnett.css">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #fff;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            max-width: 1400px;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .center-col {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #board-container {
+            width: 560px;
+            height: 560px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #board-container {
+                width: 95vw;
+                height: 95vw;
+                min-height: 95vw;
+                min-width: 95vw;
+            }
+        }
+
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 20px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+        }
+
+        .coach-panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 20px;
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-height: 800px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            transition: opacity 0.3s;
+        }
+
+        .coach-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #0f3460;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #a0aabf;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+
+        .status-dot.online {
+            background: #00c853;
+        }
+
+        .status-dot.offline {
+            background: #ffeb3b;
+        }
+
+        .opening-section h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.3em;
+            color: #fff;
+        }
+
+        .opening-section #opening-variation {
+            font-size: 0.9em;
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+
+        .opening-section p {
+            font-size: 0.9em;
+            color: #d0d8e8;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .opening-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .coach-btn {
+            background: #0f1626;
+            color: #4a90e2;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            text-align: center;
+            border: 1px solid #4a90e2;
+            transition: all 0.2s;
+        }
+
+        .coach-btn:hover {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .feedback-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feedback-section h3 {
+            margin: 0;
+            font-size: 1.1em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #000;
+            width: max-content;
+        }
+
+        .badge.best {
+            background: #00c853;
+            color: white;
+        }
+
+        .badge.excellent {
+            background: #69f0ae;
+        }
+
+        .badge.good {
+            background: #00bcd4;
+            color: white;
+        }
+
+        .badge.inaccuracy {
+            background: #ffeb3b;
+        }
+
+        .badge.mistake {
+            background: #ff9800;
+            color: white;
+        }
+
+        .badge.blunder {
+            background: #f44336;
+            color: white;
+        }
+
+        .badge.gl-blunder {
+            background: #b71c1c;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .delta {
+            font-family: monospace;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .delta.positive {
+            color: #00c853;
+        }
+
+        .delta.negative {
+            color: #f44336;
+        }
+
+        .feedback-text {
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #d0d8e8;
+        }
+
+        .feedback-text b {
+            color: #4a90e2;
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 3px;
+            font-size: 0.95em;
+        }
+
+        .better-move-box {
+            background: rgba(74, 144, 226, 0.1);
+            border-left: 3px solid #4a90e2;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border-left-color: #4a90e2;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #status {
+            font-size: 1.25em;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #4a90e2;
+            text-align: center;
+            min-height: 30px;
+        }
+
+        button {
+            background: #0f3460;
+            color: white;
+            border: 2px solid #4a90e2;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background: #4a90e2;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .controls button {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        #history {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 250px;
+            background: #0f1626;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .move-entry {
+            display: flex;
+            align-items: center;
+            background: #16213e;
+            padding: 8px 12px;
+            border-radius: 6px;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .move-entry.player-move {
+            border: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .move-entry.engine-move {
+            background: rgba(255, 255, 255, 0.05);
+            margin-left: 20px;
+        }
+
+        .move-entry:hover {
+            border-color: #4a90e2;
+        }
+
+        .move-entry.viewing {
+            background: rgba(74, 144, 226, 0.3) !important;
+            border: 1px solid #4a90e2 !important;
+        }
+
+        .move-san {
+            font-weight: 600;
+            min-width: 45px;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+
+        .explain-btn {
+            height: 26px;
+            padding: 0 12px;
+            border-radius: 13px;
+            font-size: 0.85em;
+            border: 1px solid #4a5568;
+            background: #1e2a3a;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0;
+            margin-left: auto;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .explain-btn:hover:not(:disabled) {
+            background: #2a3c54;
+            border-color: #4a90e2;
+        }
+
+        .explain-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .explain-btn.analyzing {
+            animation: pulse-opacity 1.5s infinite;
+        }
+
+        .explain-btn.explained {
+            background: rgba(0, 200, 83, 0.15);
+            border-color: #00c853;
+            color: #69f0ae;
+        }
+
+        @keyframes pulse-opacity {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+            border: 1px solid #4a90e2;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .modal-box h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-weight: 400;
+        }
+
+        .color-choice-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .color-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            border: 2px solid;
+            background: #0f1626;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 160px;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+
+        #play-white-btn {
+            border-color: #a0aabf;
+        }
+
+        #play-white-btn .piece-icon {
+            color: white;
+            font-size: 48px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        #play-black-btn {
+            border-color: #4a5568;
+        }
+
+        #play-black-btn .piece-icon {
+            color: #111;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+            font-size: 48px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .color-btn span {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .color-btn small {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.05);
+            border-color: #4a90e2 !important;
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .promo-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #16213e;
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            border: 1px solid #4a90e2;
+        }
+
+        .promo-dialog h3 {
+            margin-top: 0;
+        }
+
+        .promo-opts {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .promo-opts button {
+            flex: 1;
+            margin: 0;
+            border: none;
+            font-size: 32px;
+            background: #0f1626;
+            padding: 10px;
+        }
+
+        .promo-opts button:hover {
+            background: #4a90e2;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            margin: 6px 0;
+            align-items: center;
+        }
+
+        .stats-label {
+            color: #aaa;
+            flex: 1;
+        }
+
+        .stats-white {
+            color: #eee;
+            font-weight: bold;
+        }
+
+        .stats-draw {
+            color: #aaa;
+        }
+
+        .stats-black {
+            color: #888;
+        }
+
+        .stats-continuations {
+            font-size: 11px;
+            color: #7986cb;
+            margin-top: 4px;
+        }
+
+        .continuation-move {
+            cursor: pointer;
+        }
+
+        .continuation-move:hover {
+            color: #e94560;
+        }
+
+        .blunder-banner {
+            display: none;
+        }
+
+        .blunder-banner.warning {
+            background: #ff9800;
+            color: black;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .blunder-banner.critical {
+            background: #f44336;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            animation: pulse 1s infinite;
+        }
+
+        .pattern-header {
+            font-weight: bold;
+            color: #e94560;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .pattern-warning {
+            font-size: 12px;
+            color: #ffcc80;
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: rgba(255, 150, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .pattern-positive {
+            font-size: 12px;
+            color: #a5d6a7;
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: rgba(0, 200, 0, 0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HomeBrewed Chess Engine (and coach)</h1>
+    <div class="container">
+        <div class="panel">
+            <div id="status">Connecting...</div>
+            <div class="controls">
+                <button id="btn-new-game">New Game</button>
+                <button id="flip-board-btn" title="Flip Board">⇅ Flip</button>
+            </div>
+            <button id="btn-copy-pgn"
+                style="width: 100%; margin-bottom: 15px; background: #2a3c54; border-color: #4a5568;">📋 Copy
+                PGN</button>
+            <div id="history"></div>
+        </div>
+
+        <div class="center-col">
+            <div id="blunder-banner"></div>
+            <div id="board-container" class="cg-wrap"></div>
+        </div>
+
+        <div class="coach-panel">
+            <div class="coach-status" title="Connecting to LM Studio API on localhost:1234">
+                <span class="status-dot offline" id="coach-indicator"></span>
+                <span id="coach-status-text">Checking for Local AI Coach...</span>
+            </div>
+
+            <div class="opening-section" id="opening-section" style="display: none;">
+                <h2 id="opening-name">Starting Position</h2>
+                <div id="opening-variation"></div>
+                <p id="opening-ideas"></p>
+                <div class="opening-links">
+                    <a id="link-explorer" href="#" target="_blank" class="coach-btn">📖 Opening Explorer</a>
+                    <a id="link-study" href="#" target="_blank" class="coach-btn">📚 Find Studies</a>
+                    <a id="link-analysis" href="#" target="_blank" class="coach-btn">🔍 Analyze on Lichess</a>
+                </div>
+                <div id="opening-stats"></div>
+            </div>
+
+            <div class="feedback-section" id="feedback-section">
+                <h3 id="feedback-header">Move Feedback</h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <div id="feedback-badge" class="badge" style="display:none;"></div>
+                    <div id="feedback-delta" class="delta"></div>
+                </div>
+                <div id="feedback-content" class="feedback-text" style="margin-top: 15px;">
+                    Play a move to receive grandmaster coaching!
+                </div>
+                <div id="pattern-summary" style="display:none; margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="color-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>Choose Your Color</h2>
+            <div class="color-choice-row">
+                <button id="play-white-btn" class="color-btn">
+                    <div class="piece-icon">♔</div>
+                    <span>Play as White</span>
+                    <small>You move first</small>
+                </button>
+                <button id="play-black-btn" class="color-btn">
+                    <div class="piece-icon">♚</div>
+                    <span>Play as Black</span>
+                    <small>Engine moves first</small>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="promo-dialog" id="promo">
+        <h3>Promote Pawn</h3>
+        <div class="promo-opts">
+            <button data-role="q">♕</button>
+            <button data-role="r">♖</button>
+            <button data-role="b">♗</button>
+            <button data-role="n">♘</button>
+        </div>
+    </div>
+
+    <!-- Implement Modern JavaScript ES Module pattern -->
+    <script type="module">
+        import { Chessground } from '/dist/chessground.min.js';
+
+        const API_BASE = '';
+
+        let cg = null;
+        let currentFen = "startpos";
+        let isEngineThinking = false;
+        let pendingMove = null;
+        let moveCounter = 1;
+        let plyCount = 0;
+        let uciHistory = [];
+        let moveLog = [];
+        let viewingMoveIndex = null;
+        let coachActive = false;
+        let playerColor = 'white';
+        let currentOrientation = 'white';
+        let gamePatterns = {
+            blunders: 0,
+            mistakes: 0,
+            inaccuracies: 0,
+            excellentMoves: 0,
+            hangingPieceCount: 0,
+            kingExposureCount: 0,
+            consecutivePoorMoves: 0,
+            maxConsecutivePoor: 0
+        };
+
+        const statusEl = document.getElementById('status');
+        const historyEl = document.getElementById('history');
+
+        async function init() {
+            cg = Chessground(document.getElementById('board-container'), {
+                animation: { enabled: true, duration: 300 }
+            });
+            await checkCoachStatus();
+            showColorModal();
+        }
+
+        async function checkCoachStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/coach_status`);
+                const data = await res.json();
+                coachActive = data.lmstudio_running;
+
+                const indicator = document.getElementById('coach-indicator');
+                const statText = document.getElementById('coach-status-text');
+
+                if (coachActive) {
+                    indicator.className = 'status-dot online';
+                    statText.innerText = data.status_message;
+                    document.getElementById('feedback-content').innerHTML = "Click 💡 Explain on any move to get coaching feedback.";
+                } else {
+                    indicator.className = 'status-dot offline';
+                    statText.innerText = data.status_message;
+                    document.getElementById('feedback-content').innerHTML = `
+                        <b>🔌 LM Studio is not running.</b><br><br>
+                        Open LM Studio → load a model → click Start Server<br>
+                        Then refresh this page to enable move coaching.<br>
+                    `;
+                }
+            } catch (e) {
+                console.error("Coach status check failed", e);
+            }
+        }
+
+        function showColorModal() {
+            document.getElementById('color-modal').style.display = 'flex';
+        }
+
+        async function startNewGame() {
+            document.getElementById('color-modal').style.display = 'none';
+            statusEl.innerText = "Initializing...";
+            cg.set({ movable: { color: 'none' } });
+
+            try {
+                const res = await fetch(`${API_BASE}/new_game`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ player_color: playerColor })
+                });
+                const data = await res.json();
+                currentFen = data.fen;
+                uciHistory = [];
+                moveLog = [];
+                viewingMoveIndex = null;
+                gamePatterns = {
+                    blunders: 0, mistakes: 0, inaccuracies: 0,
+                    excellentMoves: 0, hangingPieceCount: 0, kingExposureCount: 0,
+                    consecutivePoorMoves: 0, maxConsecutivePoor: 0
+                };
+
+                historyEl.innerHTML = "";
+                moveCounter = 1;
+                plyCount = 0;
+                currentOrientation = playerColor;
+
+                cg.set({ fen: currentFen, orientation: currentOrientation, turnColor: 'white', lastMove: [] });
+
+                document.getElementById('opening-section').style.display = 'none';
+                document.getElementById('feedback-badge').style.display = 'none';
+                document.getElementById('feedback-delta').innerText = '';
+                document.getElementById('blunder-banner').style.display = 'none';
+                document.getElementById('pattern-summary').style.display = 'none';
+
+                if (coachActive) {
+                    document.getElementById('feedback-content').innerHTML = "Click 💡 Explain on any move to get coaching feedback.";
+                }
+
+                if (playerColor === 'white') {
+                    statusEl.innerText = "Your turn (White)";
+                    await updateLegalMoves(playerColor);
+                } else {
+                    statusEl.innerText = "Engine is thinking...";
+                    await triggerEngineMove();
+                }
+            } catch (e) {
+                statusEl.innerText = "Error connecting to engine API";
+                console.error(e);
+            }
+        }
+
+        async function updateLegalMoves(color) {
+            if (viewingMoveIndex !== null) {
+                cg.set({ fen: moveLog[viewingMoveIndex].fenAfter, turnColor: color, movable: { color: 'none' } });
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/legal_moves?fen=${encodeURIComponent(currentFen)}`);
+                const data = await res.json();
+
+                const dests = new Map();
+                data.moves.forEach(m => {
+                    const from = m.substring(0, 2);
+                    const to = m.substring(2, 4);
+                    if (!dests.has(from)) dests.set(from, []);
+                    dests.get(from).push(to);
+                });
+
+                cg.set({
+                    fen: currentFen,
+                    turnColor: color,
+                    movable: {
+                        color: color,
+                        dests: dests,
+                        events: { after: handleMove }
+                    }
+                });
+            } catch (e) {
+                console.error("Legal moves fetch error:", e);
+            }
+        }
+
+        function handleMove(orig, dest) {
+            const piece = cg.state.pieces.get(dest);
+            if (piece && piece.role === 'pawn' && (dest[1] === '8' || dest[1] === '1')) {
+                pendingMove = { orig, dest };
+                document.getElementById('promo').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+                return;
+            }
+            sendMove(orig + dest);
+        }
+
+        function submitPromo(role) {
+            document.getElementById('promo').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            if (pendingMove) {
+                sendMove(pendingMove.orig + pendingMove.dest + role);
+                pendingMove = null;
+            } else {
+                showColorModal();
+            }
+        }
+
+        function buildRecentHistoryForBackend(analyzingIndex) {
+            const hist = [];
+            const endIndex = analyzingIndex;
+            const startIndex = Math.max(0, endIndex - 5);
+            for (let i = startIndex; i < endIndex; i++) {
+                const m = moveLog[i];
+                if (m.analysisCache) {
+                    hist.push({
+                        move_san: m.movePlayedSan || m.engineMoveSan || m.movePlayed,
+                        side: m.analyzing_side === 'player' ? (playerColor === 'white' ? 'White' : 'Black') : (playerColor === 'white' ? 'Black' : 'White'),
+                        classification: m.analysisCache.classification,
+                        score_delta_pawns: m.analysisCache.score_delta / 100.0,
+                        was_player_move: m.analyzing_side === 'player'
+                    });
+                } else {
+                    hist.push({
+                        move_san: m.movePlayedSan || m.engineMoveSan || m.movePlayed,
+                        side: m.analyzing_side === 'player' ? (playerColor === 'white' ? 'White' : 'Black') : (playerColor === 'white' ? 'Black' : 'White'),
+                        classification: "Unanalyzed",
+                        score_delta_pawns: 0.0,
+                        was_player_move: m.analyzing_side === 'player'
+                    });
+                }
+            }
+            return hist;
+        }
+
+        window.triggerExplainAnalysis = async function (btn) {
+            const moveIndex = parseInt(btn.dataset.moveIndex);
+            const moveData = moveLog[moveIndex];
+            const cache = moveData.analysisCache;
+
+            document.getElementById('blunder-banner').style.display = 'none';
+
+            if (cache) {
+                renderAnalysisCache(cache, btn, moveIndex);
+                return;
+            }
+
+            btn.classList.add('analyzing');
+            btn.innerHTML = `⏳ Analyzing...`;
+            btn.disabled = true;
+
+            document.getElementById('feedback-badge').style.display = 'none';
+            document.getElementById('feedback-delta').innerText = '';
+            document.getElementById('feedback-content').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; color: #4a90e2; font-style: italic;">
+                    <div class="spinner"></div> 🤔 Coach is thinking...
+                </div>
+            `;
+
+            const moveHistorySubset = uciHistory.slice(0, moveIndex + 1);
+
+            const payload = {
+                fen_before: moveData.fenBefore,
+                move_played: moveData.analyzing_side === 'player' ? moveData.movePlayed : moveData.engineMove,
+                fen_after: moveData.fenAfter,
+                engine_best_move: moveData.engineBestMove || (moveData.analyzing_side === 'player' ? moveData.movePlayed : moveData.engineMove),
+                engine_score_before: moveData.scoreBefore || 0,
+                engine_score_after: moveData.scoreAfter || 0,
+                move_history: moveHistorySubset,
+                analyzing_side: moveData.analyzing_side,
+                recent_history: buildRecentHistoryForBackend(moveIndex),
+                engine_pv: moveData.enginePv || "",
+                game_patterns: gamePatterns
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/analyze_move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                moveLog[moveIndex].analysisCache = data;
+
+                // Capture move SAN properly for history render updates
+                if (moveData.analyzing_side === 'player') {
+                    moveLog[moveIndex].movePlayedSan = data.move_played_san;
+                    const sanSpan = document.querySelector(`#history-player-${moveIndex} .move-san`);
+                    if (sanSpan) sanSpan.textContent = data.move_played_san;
+                } else {
+                    moveLog[moveIndex].engineMoveSan = data.move_played_san;
+                    const sanSpan = document.querySelector(`#history-engine-${moveIndex} .move-san`);
+                    if (sanSpan) sanSpan.textContent = data.move_played_san;
+                }
+
+                if (moveData.analyzing_side === 'player') {
+                    updatePatterns(data.classification, data.tactical_flags);
+                }
+
+                renderAnalysisCache(data, btn, moveIndex);
+
+                // Update opening display
+                document.getElementById('opening-section').style.display = 'block';
+                document.getElementById('opening-name').innerHTML = `${data.eco_code ? `<span class="move-badge" style="background:#4a5568;color:white;margin-right:8px;">${data.eco_code}</span>` : ''}${data.opening_name}`;
+                document.getElementById('opening-variation').innerText = data.variation || '';
+                document.getElementById('opening-ideas').innerText = data.opening_ideas || '';
+                document.getElementById('link-explorer').href = data.opening_url;
+                document.getElementById('link-study').href = data.study_url;
+                document.getElementById('link-analysis').href = data.analysis_url;
+
+            } catch (e) {
+                btn.classList.remove('analyzing');
+                btn.innerHTML = `💡 Explain`;
+                btn.disabled = false;
+                document.getElementById('feedback-content').innerHTML = `<i>Analysis failed to load.</i>`;
+                console.error(e);
+            }
+        };
+
+        function updatePatterns(classification, tacticalFlags) {
+            if (['Blunder', 'Game-Losing Blunder'].includes(classification)) {
+                gamePatterns.blunders++;
+                gamePatterns.consecutivePoorMoves++;
+            } else if (classification === 'Mistake') {
+                gamePatterns.mistakes++;
+                gamePatterns.consecutivePoorMoves++;
+            } else if (classification === 'Inaccuracy') {
+                gamePatterns.inaccuracies++;
+                gamePatterns.consecutivePoorMoves++;
+            } else {
+                gamePatterns.consecutivePoorMoves = 0;
+            }
+
+            gamePatterns.maxConsecutivePoor = Math.max(
+                gamePatterns.maxConsecutivePoor,
+                gamePatterns.consecutivePoorMoves
+            );
+
+            if (tacticalFlags?.piece_is_hanging) gamePatterns.hangingPieceCount++;
+            if (tacticalFlags?.exposes_king) gamePatterns.kingExposureCount++;
+            if (['Best Move', 'Excellent'].includes(classification)) gamePatterns.excellentMoves++;
+
+            renderPatternSummary();
+        }
+
+        function renderPatternSummary() {
+            const panel = document.getElementById('pattern-summary');
+            const total = gamePatterns.blunders + gamePatterns.mistakes +
+                gamePatterns.inaccuracies + gamePatterns.excellentMoves;
+            if (total < 3) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            let warnings = [];
+
+            if (gamePatterns.hangingPieceCount >= 2)
+                warnings.push(`⚠️ You've left pieces undefended ${gamePatterns.hangingPieceCount} times — always check if your pieces are protected after moving`);
+            if (gamePatterns.kingExposureCount >= 2)
+                warnings.push(`👑 You've exposed your king ${gamePatterns.kingExposureCount} times — prioritize castling and king safety`);
+            if (gamePatterns.consecutivePoorMoves >= 3)
+                warnings.push(`📉 ${gamePatterns.consecutivePoorMoves} poor moves in a row — slow down and look for threats before moving`);
+            if (gamePatterns.blunders >= 2)
+                warnings.push(`❌ ${gamePatterns.blunders} blunders this game — before each move ask: can my opponent capture anything for free?`);
+
+            const positives = [];
+            if (gamePatterns.excellentMoves >= 3)
+                positives.push(`✅ ${gamePatterns.excellentMoves} excellent moves — great calculation!`);
+
+            panel.innerHTML = `
+                <div class="pattern-header">📊 Game Patterns</div>
+                ${warnings.map(w => `<div class="pattern-warning">${w}</div>`).join('')}
+                ${positives.map(p => `<div class="pattern-positive">${p}</div>`).join('')}
+            `;
+        }
+
+        function fetchOpeningStats() {
+            if (uciHistory.length === 0) return;
+            const movesStr = uciHistory.join(",");
+            fetch(`${API_BASE}/opening_stats?moves=${movesStr}`)
+                .then(r => r.json())
+                .then(stats => renderOpeningStats(stats))
+                .catch(e => console.error("Stats fetching failed", e));
+        }
+
+        function renderOpeningStats(stats) {
+            const el = document.getElementById('opening-stats');
+            if (!stats || stats.error || stats.total_games === 0) {
+                el.innerHTML = "";
+                return;
+            }
+
+            const continuations = stats.top_continuations.map(m =>
+                `<span class="continuation-move">${m.move} <small>(${m.games.toLocaleString()} games)</small></span>`
+            ).join(' · ');
+
+            el.innerHTML = `
+                <div class="stats-row">
+                    <span class="stats-label">📊 ${stats.total_games.toLocaleString()} master games</span>
+                    <span class="stats-white">⬜ ${stats.white_win_pct}%</span>
+                    <span class="stats-draw">🔲 ${stats.draw_pct}%</span>
+                    <span class="stats-black">⬛ ${stats.black_win_pct}%</span>
+                </div>
+                <div class="stats-continuations">
+                    Popular next moves: ${continuations}
+                </div>
+            `;
+        }
+
+        function checkForBlunder(scoreBefore, scoreAfter, checkingSide) {
+            const multiplier = checkingSide === 'white' ? 1 : -1;
+            const deltaFromPlayerPerspective = (scoreAfter - scoreBefore) * multiplier;
+
+            const blunderBanner = document.getElementById('blunder-banner');
+
+            if (deltaFromPlayerPerspective < -300) {
+                blunderBanner.textContent = '❌ Critical error — significant material or advantage was lost. Click Explain to understand.';
+                blunderBanner.className = 'blunder-banner critical';
+                blunderBanner.style.display = 'block';
+            } else if (deltaFromPlayerPerspective < -150) {
+                blunderBanner.textContent = '⚠️ That may have been a blunder! Click 💡 Explain on your move to understand what happened.';
+                blunderBanner.className = 'blunder-banner warning';
+                blunderBanner.style.display = 'block';
+            } else {
+                blunderBanner.style.display = 'none';
+            }
+        }
+
+        function renderAnalysisCache(data, btn, moveIndex) {
+            btn.classList.remove('analyzing');
+            btn.classList.add('explained');
+            btn.innerHTML = `✅ Explained`;
+            btn.disabled = false;
+
+            let historyBadge = document.getElementById(`badge-${moveIndex}`);
+            if (!historyBadge) {
+                historyBadge = document.createElement('span');
+                historyBadge.id = `badge-${moveIndex}`;
+                historyBadge.className = 'move-badge';
+                btn.parentElement.insertBefore(historyBadge, btn);
+            }
+            historyBadge.innerText = data.classification;
+            historyBadge.className = 'move-badge';
+            if (data.classification === 'Best Move') historyBadge.classList.add('best');
+            else if (data.classification === 'Excellent') historyBadge.classList.add('excellent');
+            else if (data.classification === 'Good') historyBadge.classList.add('good');
+            else if (data.classification === 'Inaccuracy') historyBadge.classList.add('inaccuracy');
+            else if (data.classification === 'Mistake') historyBadge.classList.add('mistake');
+            else if (data.classification === 'Blunder') historyBadge.classList.add('blunder');
+            else if (data.classification === 'Game-Losing Blunder') historyBadge.classList.add('gl-blunder');
+
+            const panelBadge = document.getElementById('feedback-badge');
+            panelBadge.style.display = 'inline-block';
+            panelBadge.innerText = data.classification;
+            panelBadge.className = historyBadge.className;
+
+            const deltaEl = document.getElementById('feedback-delta');
+            const cp = data.score_delta / 100.0;
+            const sideLabel = moveLog[moveIndex].analyzing_side === 'player' ?
+                (playerColor === 'white' ? 'White' : 'Black') :
+                (playerColor === 'white' ? 'Black' : 'White');
+
+            deltaEl.innerText = `Score change for ${sideLabel}: ${(cp > 0 ? "+" : "") + cp.toFixed(2)}`;
+            deltaEl.className = 'delta ' + (cp >= 0 ? 'positive' : 'negative');
+
+            let tacticalBadgesHTML = '';
+            if (data.tactical_flags) {
+                if (data.tactical_flags.piece_is_hanging) {
+                    tacticalBadgesHTML += '<span class="move-badge" style="background:#d97706;color:white;margin-bottom:8px;margin-right:8px;display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.8em;">⚠️ Hanging Piece</span>';
+                }
+                if (data.tactical_flags.creates_fork && data.tactical_flags.creates_fork.is_fork) {
+                    tacticalBadgesHTML += '<span class="move-badge" style="background:#dc2626;color:white;margin-bottom:8px;margin-right:8px;display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.8em;">⚔️ Fork Created</span>';
+                }
+                if (data.tactical_flags.exposes_king) {
+                    tacticalBadgesHTML += '<span class="move-badge" style="background:#991b1b;color:white;margin-bottom:8px;margin-right:8px;display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.8em;">👑 King Exposed</span>';
+                }
+                if (data.tactical_flags.piece_is_pinned) {
+                    tacticalBadgesHTML += '<span class="move-badge" style="background:#7e22ce;color:white;margin-bottom:8px;margin-right:8px;display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.8em;">📌 Piece Pinned</span>';
+                }
+            }
+
+            if (data.coach_feedback) {
+                let formattedFeedback = data.coach_feedback
+                    .replace(/(VERDICT:|WHAT THIS MOVE DOES:|WHAT THE ENGINE DID:|WHY IT IS [A-Z/]+:|WHY THE ENGINE CHOSE THIS:|WHAT YOUR OPPONENT CAN DO NOW:|WHAT THREAT THIS CREATES FOR YOU:|BETTER MOVE:|HOW TO RESPOND TO THIS:|OPENING INSIGHT:|WHAT TO EXPECT NEXT:|PRINCIPLE TO REMEMBER:)/gi, '<b>$1</b>')
+                    .replace(/\n\n/g, '<br><br>');
+                document.getElementById('feedback-content').innerHTML = tacticalBadgesHTML + formattedFeedback;
+            } else {
+                document.getElementById('feedback-content').innerHTML = tacticalBadgesHTML + `<i>No detailed feedback available.</i>`;
+            }
+        }
+
+        async function triggerEngineMove() {
+            try {
+                const res = await fetch(`${API_BASE}/engine_move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ movetime: 1000 })
+                });
+                const data = await res.json();
+
+                if (res.status !== 200) {
+                    statusEl.innerText = data.detail?.error || "Error executing engine move";
+                    return;
+                }
+
+                const fenBefore = currentFen;
+                const historyBefore = [...uciHistory];
+
+                currentFen = data.fen;
+                const engMove = data.engine_move;
+                const engMoveSan = data.engine_move_san || engMove;
+
+                if (engMove && engMove !== "0000") {
+                    const moveIndex = moveLog.length;
+
+                    moveLog.push({
+                        moveIndex: moveIndex,
+                        analyzing_side: 'engine',
+                        engineMove: engMove,
+                        engineMoveSan: engMoveSan,
+                        fenBefore: fenBefore,
+                        fenAfter: currentFen,
+                        scoreBefore: data.score_before || 0, // Fallback if backend didn't supply them perfectly yet
+                        scoreAfter: data.score_after || 0,
+                        enginePv: data.engine_pv || "",
+                        moveHistory: [...historyBefore, engMove],
+                        analysisCache: null
+                    });
+
+                    const o = engMove.substring(0, 2);
+                    const d = engMove.substring(2, 4);
+                    cg.move(o, d);
+                    setTimeout(() => cg.set({ fen: currentFen }), 300);
+
+                    uciHistory.push(engMove);
+
+                    const historyElId = `history-engine-${moveIndex}`;
+                    appendEngineHistory(engMoveSan, moveIndex, historyElId);
+
+                    fetchOpeningStats();
+                } else {
+                    cg.set({ fen: currentFen });
+                }
+
+                if (data.status !== "ongoing") {
+                    handleGameOver(data);
+                } else {
+                    statusEl.innerText = `Your turn (${playerColor === 'white' ? 'White' : 'Black'})`;
+                    await updateLegalMoves(playerColor);
+                }
+            } catch (e) {
+                statusEl.innerText = "Error waiting for engine API";
+                console.error(e);
+            }
+        }
+
+        async function sendMove(uci) {
+            isEngineThinking = true;
+            cg.set({ movable: { color: 'none' } });
+            statusEl.innerText = "Engine thinking...";
+
+            const fenBefore = currentFen;
+            const historyBefore = [...uciHistory];
+
+            uciHistory.push(uci);
+
+            const moveIndex = moveLog.length;
+            const historyElId = `history-player-${moveIndex}`;
+
+            appendPlayerHistory(uci, moveIndex, historyElId);
+
+            try {
+                const res = await fetch(`${API_BASE}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ move: uci })
+                });
+
+                const data = await res.json();
+
+                if (res.status !== 200) {
+                    statusEl.innerText = data.detail?.error || "Error executing move";
+                    uciHistory.pop();
+                    document.getElementById(historyElId)?.remove();
+                    plyCount--;
+                    await updateLegalMoves(playerColor);
+                    return;
+                }
+
+                currentFen = data.fen;
+                const engMove = data.engine_move;
+
+                moveLog.push({
+                    moveIndex: moveIndex,
+                    analyzing_side: 'player',
+                    movePlayed: uci,
+                    movePlayedSan: data.player_move_san || uci,
+                    fenBefore: fenBefore,
+                    fenAfter: data.fen_after_player || currentFen,
+                    engineBestMove: engMove,
+                    scoreBefore: data.score_before,
+                    scoreAfter: data.score_after,
+                    enginePv: data.engine_pv || "",
+                    moveHistory: [...historyBefore, uci],
+                    analysisCache: null
+                });
+
+                if (data.player_move_san) {
+                    const sanSpan = document.querySelector(`#${historyElId} .move-san`);
+                    if (sanSpan) sanSpan.textContent = data.player_move_san;
+                }
+
+                checkForBlunder(data.score_before, data.score_after, playerColor);
+                fetchOpeningStats();
+
+                if (engMove && engMove !== "0000") {
+                    const engineMoveIndex = moveLog.length;
+                    const engineHistoryBefore = [...historyBefore, uci];
+
+                    // We don't have engine score_before/after immediately here cleanly from backend move endpoint,
+                    // but we push a dummy log for UI explain purposes.
+                    moveLog.push({
+                        moveIndex: engineMoveIndex,
+                        analyzing_side: 'engine',
+                        engineMove: engMove,
+                        engineMoveSan: data.engine_move_san || engMove,
+                        fenBefore: data.fen_after_player || currentFen,
+                        fenAfter: data.fen,
+                        scoreBefore: data.score_after,
+                        scoreAfter: 0,
+                        enginePv: "",
+                        moveHistory: [...engineHistoryBefore, engMove],
+                        analysisCache: null
+                    });
+
+                    const o = engMove.substring(0, 2);
+                    const d = engMove.substring(2, 4);
+                    cg.move(o, d);
+
+                    setTimeout(() => {
+                        cg.set({ fen: data.fen });
+                        currentFen = data.fen;
+                    }, 300);
+
+                    uciHistory.push(engMove);
+                    appendEngineHistory(engMove, engineMoveIndex, `history-engine-${engineMoveIndex}`);
+
+                    fetchOpeningStats();
+                } else {
+                    cg.set({ fen: currentFen });
+                }
+
+                if (data.status !== "ongoing") {
+                    handleGameOver(data);
+                } else {
+                    statusEl.innerText = `Your turn (${playerColor === 'white' ? 'White' : 'Black'})`;
+                    await updateLegalMoves(playerColor);
+                }
+
+            } catch (e) {
+                statusEl.innerText = "Error waiting for engine API";
+                console.error(e);
+            }
+        }
+
+        function handleGameOver(data) {
+            let msg = "";
+            if (data.status === "checkmate") msg = `Checkmate - ${data.winner} wins!`;
+            else if (data.status === "stalemate") msg = `Draw by Stalemate`;
+            else msg = `Draw (${data.status})`;
+            statusEl.innerText = msg;
+            cg.set({ movable: { color: 'none' }, fen: currentFen });
+        }
+
+        function goToMove(index) {
+            document.querySelectorAll('.move-entry').forEach(el => el.classList.remove('viewing'));
+            if (index === null || index >= moveLog.length - 1) {
+                viewingMoveIndex = null;
+                cg.set({ fen: currentFen });
+                const lastElId = moveLog.length > 0 ? (moveLog[moveLog.length - 1].analyzing_side === 'player' ? `history-player-${moveLog.length - 1}` : `history-engine-${moveLog.length - 1}`) : null;
+                if (lastElId) document.getElementById(lastElId)?.classList.add('viewing');
+
+                if (isEngineThinking) {
+                    statusEl.innerText = "Engine thinking...";
+                    cg.set({ movable: { color: 'none' } });
+                } else {
+                    statusEl.innerText = `Your turn (${playerColor === 'white' ? 'White' : 'Black'})`;
+                    updateLegalMoves(playerColor);
+                }
+            } else {
+                viewingMoveIndex = index;
+                cg.set({ fen: moveLog[index].fenAfter, movable: { color: 'none' } });
+                const moveNum = Math.floor(index / 2) + 1;
+                statusEl.innerText = `Viewing move ${moveNum}`;
+                const elId = moveLog[index].analyzing_side === 'player' ? `history-player-${index}` : `history-engine-${index}`;
+                document.getElementById(elId)?.classList.add('viewing');
+            }
+        }
+
+        function appendPlayerHistory(uci, index, id) {
+            const el = document.createElement('div');
+            el.className = 'move-entry player-move';
+            el.id = id;
+
+            const moveNum = Math.floor(plyCount / 2) + 1;
+            const numText = plyCount % 2 === 0 ? `${moveNum}. ` : `${moveNum}... `;
+
+            el.innerHTML = `
+                <span class="history-num" style="color:#888;font-size:0.9em;width:35px;display:inline-block;">${numText}</span>
+                <span class="move-san">${uci}</span>
+                <button class="explain-btn" data-move-index="${index}">💡 Explain</button>
+            `;
+            historyEl.appendChild(el);
+            historyEl.scrollTop = historyEl.scrollHeight;
+
+            el.querySelector('.explain-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.triggerExplainAnalysis(this);
+            });
+
+            el.addEventListener('click', function () {
+                goToMove(index);
+            });
+
+            plyCount++;
+
+            if (viewingMoveIndex === null) {
+                document.querySelectorAll('.move-entry').forEach(e => e.classList.remove('viewing'));
+                el.classList.add('viewing');
+            }
+        }
+
+        function appendEngineHistory(uci, index, id) {
+            const el = document.createElement('div');
+            el.className = 'move-entry engine-move';
+            el.id = id;
+
+            const moveNum = Math.floor(plyCount / 2) + 1;
+            const numText = plyCount % 2 === 0 ? `${moveNum}. ` : `${moveNum}... `;
+
+            el.innerHTML = `
+                <span class="history-num" style="color:#888;font-size:0.9em;width:35px;display:inline-block;">${numText}</span>
+                <span class="move-san">${uci}</span>
+                <button class="explain-btn engine-explain" data-move-index="${index}">💡 Why did engine play this?</button>
+            `;
+            historyEl.appendChild(el);
+            historyEl.scrollTop = historyEl.scrollHeight;
+
+            el.querySelector('.explain-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.triggerExplainAnalysis(this);
+            });
+
+            el.addEventListener('click', function () {
+                goToMove(index);
+            });
+
+            plyCount++;
+
+            if (viewingMoveIndex === null) {
+                document.querySelectorAll('.move-entry').forEach(e => e.classList.remove('viewing'));
+                el.classList.add('viewing');
+            }
+        }
+
+        document.getElementById('btn-new-game').addEventListener('click', showColorModal);
+
+        document.getElementById('play-white-btn').addEventListener('click', () => {
+            playerColor = 'white';
+            startNewGame();
+        });
+
+        document.getElementById('play-black-btn').addEventListener('click', () => {
+            playerColor = 'black';
+            startNewGame();
+        });
+
+        document.getElementById('flip-board-btn').addEventListener('click', () => {
+            currentOrientation = currentOrientation === 'white' ? 'black' : 'white';
+            cg.set({ orientation: currentOrientation });
+        });
+
+        document.querySelectorAll('.promo-opts button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                submitPromo(e.target.dataset.role);
+            });
+        });
+
+        document.getElementById('btn-copy-pgn').addEventListener('click', function () {
+            let pgn = "";
+            let moves = [];
+            const limit = viewingMoveIndex !== null ? viewingMoveIndex : moveLog.length - 1;
+            for (let i = 0; i <= limit; i++) {
+                if (moveLog[i].analyzing_side === 'player') {
+                    moves.push(moveLog[i].movePlayedSan || moveLog[i].movePlayed);
+                } else {
+                    moves.push(moveLog[i].engineMoveSan || moveLog[i].engineMove);
+                }
+            }
+            for (let i = 0; i < moves.length; i += 2) {
+                pgn += `${(i / 2) + 1}. ${moves[i]} `;
+                if (i + 1 < moves.length) {
+                    pgn += `${moves[i + 1]} `;
+                }
+            }
+            pgn = pgn.trim();
+            if (!pgn) return;
+
+            navigator.clipboard.writeText(pgn).then(() => {
+                const btn = document.getElementById('btn-copy-pgn');
+                btn.innerText = "✅ Copied!";
+                btn.style.background = "#00c853";
+                btn.style.borderColor = "#00e676";
+                setTimeout(() => {
+                    btn.innerText = "📋 Copy PGN";
+                    btn.style.background = "#2a3c54";
+                    btn.style.borderColor = "#4a5568";
+                }, 2000);
+            });
+        });
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+
+</html>
