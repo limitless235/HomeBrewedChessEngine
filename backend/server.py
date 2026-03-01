@@ -135,7 +135,14 @@ def load_opening_book():
                     pass
     print(f"[OPENING] Loaded {len(ECO_POSITION_MAP)} positions, {len(ECO_MOVE_MAP)} move sequences", file=sys.stderr)
 
-# Call at startup
+# Call at startup to fetch from Lichess if missing
+sys.path.append(os.path.join(PROJECT_ROOT, "scripts"))
+try:
+    from download_openings import download_openings
+    download_openings()
+except Exception as e:
+    print(f"[BOOT] Failed to run download_openings natively: {e}", file=sys.stderr)
+
 load_opening_book()
 
 def identify_opening(move_history: list, current_fen: str = None) -> dict:
