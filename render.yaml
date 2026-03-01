@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: homebrewed-chess-backend
+    env: python
+    buildCommand: "cd engine && make clean && make && cd .. && pip install -r requirements.txt"
+    startCommand: "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: LM_STUDIO_URL
+        value: "https://YOUR-NGROK-ID.ngrok-free.app/v1"
+      - key: COACH_ENABLED
+        value: "true"
