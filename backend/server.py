@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
 LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_URL", "http://localhost:1234/v1")
 LM_STUDIO_MODEL = "local-model"  # LM Studio ignores this, uses loaded model
-LM_STUDIO_TIMEOUT = 45.0
+LM_STUDIO_TIMEOUT = 120.0
 COACH_ENABLED = os.getenv("COACH_ENABLED", "true").lower() == "true"
 COACH_MAX_TOKENS = 350
 COACH_TEMPERATURE = 0.2
