@@ -520,6 +520,22 @@ def make_engine_move(req: EngineMoveRequest = EngineMoveRequest()):
 def get_fen():
     return {"fen": board.fen()}
 
+@app.get("/debug_openings")
+def debug_openings():
+    import glob
+    sizes = {}
+    try:
+        paths = glob.glob(os.path.join(PROJECT_ROOT, "openings", "*.tsv"))
+        for p in paths:
+            sizes[os.path.basename(p)] = os.path.getsize(p)
+    except Exception as e:
+        sizes["error"] = str(e)
+    return {
+        "file_sizes": sizes,
+        "loaded_positions": len(ECO_POSITION_MAP),
+        "loaded_move_sequences": len(ECO_MOVE_MAP)
+    }
+
 @app.get("/legal_moves")
 def get_legal_moves(fen: str = None):
     try:
