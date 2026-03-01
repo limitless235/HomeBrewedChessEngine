@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeBrewed Chess Engine</title>
-    <!-- Use local css styles exported from the cloned repo -->
-    <link rel="stylesheet" href="/assets/chessground.base.css">
-    <link rel="stylesheet" href="/assets/chessground.brown.css">
-    <link rel="stylesheet" href="/assets/chessground.cburnett.css">
+    <!-- Use official unpkg CDN for guaranteed Vercel cloud resolution -->
+    <link rel="stylesheet" href="https://unpkg.com/chessground/assets/chessground.base.css">
+    <link rel="stylesheet" href="https://unpkg.com/chessground/assets/chessground.brown.css">
+    <link rel="stylesheet" href="https://unpkg.com/chessground/assets/chessground.cburnett.css">
     <style>
         body {
             background-color: #1a1a2e;
@@ -745,7 +745,7 @@
 
     <!-- Implement Modern JavaScript ES Module pattern -->
     <script type="module">
-        import { Chessground } from '/dist/chessground.min.js';
+        import { Chessground } from 'https://unpkg.com/chessground/dist/chessground.min.js';
 
         const API_BASE = 'https://homebrewedchessengine.onrender.com';
 
