@@ -1,12 +1,5 @@
 {
-    "rewrites": [
-        {
-            "source": "/assets/(.*)",
-            "destination": "/static/chessground/assets/$1"
-        },
-        {
-            "source": "/dist/(.*)",
-            "destination": "/static/chessground/dist/$1"
-        }
-    ]
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
