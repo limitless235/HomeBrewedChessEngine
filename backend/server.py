@@ -1004,7 +1004,8 @@ Do not mention any move, piece, square, or plan not explicitly listed here.
     coach_feedback = None
     if COACH_ENABLED:
         try:
-            async with httpx.AsyncClient(timeout=LM_STUDIO_TIMEOUT) as client:
+            headers = {"ngrok-skip-browser-warning": "true"}
+            async with httpx.AsyncClient(timeout=LM_STUDIO_TIMEOUT, headers=headers) as client:
                 resp = await client.post(
                     f"{LM_STUDIO_BASE_URL}/chat/completions",
                     json={
@@ -1090,7 +1091,8 @@ def get_opening(moves: str = ""):
 @app.get("/coach_status")
 async def get_coach_status():
     try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
+        headers = {"ngrok-skip-browser-warning": "true"}
+        async with httpx.AsyncClient(timeout=2.0, headers=headers) as client:
             resp = await client.get(f"{LM_STUDIO_BASE_URL}/models")
             if resp.status_code == 200:
                 data = resp.json()
