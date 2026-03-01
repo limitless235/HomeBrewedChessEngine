@@ -1,0 +1,40 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - 24
+          - 22
+        script:
+          - lint
+          - check-format
+          - test
+          - dist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - run: pnpm install
+      - run: pnpm run ${{ matrix.script }}
+
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+      - uses: github/codeql-action/analyze@v3
